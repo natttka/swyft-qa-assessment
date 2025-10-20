@@ -1,0 +1,75 @@
+{
+  "info": {
+    "name": "Mid-QA Assignment",
+    "_postman_id": "b5a6a8aa-0000-4000-9000-000000000001",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "REST metrics",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:5174/api/metrics?metric=download",
+          "host": [
+            "http://localhost:5174"
+          ],
+          "path": [
+            "api",
+            "metrics"
+          ],
+          "query": [
+            {
+              "key": "metric",
+              "value": "download"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 200', ()=> pm.response.code === 200)",
+              "const json = pm.response.json()",
+              "pm.expect(json).to.have.property('points')",
+              "pm.expect(json.points).to.be.an('array').that.is.not.empty"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "GraphQL kpi",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "http://localhost:5174/graphql",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"query\":\"query($m:String!){ kpi(metric:$m){ t v } }\",\"variables\":{\"m\":\"download\"}}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 200', ()=> pm.response.code === 200)",
+              "const j = pm.response.json()",
+              "pm.expect(j.data.kpi).to.be.an('array')"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

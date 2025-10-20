@@ -1,0 +1,78 @@
+
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Network KPI Dashboard</title>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 2rem; }
+      .card { max-width: 900px; margin: auto; padding: 1rem; border: 1px solid #ddd; border-radius: 12px; }
+      .danger { color: #b00020; font-weight: 600; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>Network KPI Dashboard</h1>
+      <label for="metric">Metric:</label>
+      <select id="metric">
+        <option value="download">Download</option>
+        <option value="upload">Upload</option>
+        <option value="latency">Latency</option>
+      </select>
+      <p id="desc"></p>
+      <canvas id="chart" width="800" height="320"></canvas>
+      <p id="error" class="danger" style="display:none"></p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+      const elMetric = document.getElementById('metric')
+      const elDesc = document.getElementById('desc')
+      const elError = document.getElementById('error')
+      const ctx = document.getElementById('chart').getContext('2d')
+      let chart
+
+      async function fetchData(metric){
+        const r = await fetch(`/api/metrics?metric=${metric}`)
+        if(!r.ok) throw new Error('REST failed ' + r.status)
+        const j = await r.json()
+        // INTENTIONAL BUG: unsafe assignment enables XSS from server description
+        elDesc.innerHTML = j.description
+        return j.points.map(p => p.v)
+      }
+
+      async function fetchGraphQL(metric){
+        const q = { query: `query($m:String!){ kpi(metric:$m){ t v } }`, variables:{ m: metric } }
+        const r = await fetch('/graphql', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(q) })
+        if(!r.ok) throw new Error('GraphQL failed ' + r.status)
+        const j = await r.json()
+        return j.data.kpi.map(p => p.v)
+      }
+
+      async function render(metric){
+        elError.style.display = 'none'
+        try {
+          const [restValues, gqlValues] = await Promise.all([fetchData(metric).catch(async e => {
+            // naive retry once
+            await new Promise(s => setTimeout(s, 300))
+            return fetchData(metric)
+          }), fetchGraphQL(metric)])
+          const data = restValues
+          if(chart) chart.destroy()
+          chart = new Chart(ctx, {
+            type: 'line',
+            data: { labels: Array.from({length: data.length}, (_,i)=>i), datasets: [{ label: metric, data }] },
+            options: { responsive: false }
+          })
+        } catch (e) {
+          elError.textContent = e.message
+          elError.style.display = 'block'
+        }
+      }
+
+      elMetric.addEventListener('change', e => render(e.target.value))
+      render('download')
+    </script>
+  </body>
+</html>

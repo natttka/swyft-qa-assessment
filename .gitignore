@@ -1,0 +1,12 @@
+
+node_modules
+coverage
+dist
+.cypress-cache
+lhci
+reports
+*.log
+.DS_Store
+EVALUATOR_GUIDE.md
+.env
+.idea
