@@ -8,7 +8,6 @@
     "outDir": "dist",
     "types": [
       "node",
-      "jest",
       "cypress"
     ]
   },

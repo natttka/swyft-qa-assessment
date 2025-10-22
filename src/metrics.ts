@@ -1,15 +1,18 @@
-
 export function movingAverage(series: number[], window: number): number[] {
-  // BUG: off-by-one and doesn't handle window > series.length or zero/negative window
-  const out: number[] = []
+  if (window <= 0) throw new Error("Window must be positive");
+  if (window > series.length) throw new Error("Window larger than series");
+
+  const out: number[] = [];
   for (let i = 0; i < series.length; i++) {
-    if (i < window) {
-      out.push(series[i] / window) // wrong: partial window handling
-      continue
+    if (i < window - 1) {
+      out.push(NaN);
+      continue;
     }
-    let sum = 0
-    for (let j = i - window; j <= i; j++) sum += series[j]
-    out.push(sum / window) // wrong: divides by window but sums window+1
+    let sum = 0;
+    for (let j = i - window + 1; j <= i; j++) {
+      sum += series[j];
+    }
+    out.push(sum / window);
   }
-  return out
+  return out;
 }

@@ -9,4 +9,9 @@ export default {
   moduleFileExtensions: ['ts', 'tsx', 'js', 'mjs', 'cjs'],
   collectCoverage: true,
   coverageDirectory: 'coverage',
+    globals: {
+    'ts-jest': {
+      tsconfig: 'tsconfig.jest.json'
+    }
+  }
 };
